@@ -1,14 +1,48 @@
-# app.py
-from flask import Flask, render_template
+from flask import Flask, request
+from flask_restx import Resource, Api
 
-#Flask 객체 인스턴스 생성
 app = Flask(__name__)
+api = Api(app)
 
-@app.route('/') # 접속하는 url
-def index():
-  return render_template('index.html')
+todos = {}
+count = 1
 
-if __name__=="__main__":
-  app.run(debug=True)
-  # host 등을 직접 지정하고 싶다면
-  # app.run(host="127.0.0.1", port="5000", debug=True)
+@api.route('/todos')
+class TodoPost(Resource):
+    def post(self):
+        global count
+        global todos
+        
+        idx = count
+        count += 1
+        todos[idx] = request.json.get('data')
+        
+        return {
+            'todo_id': idx,
+            'data': todos[idx]
+        }
+
+
+@api.route('/todos/<int:todo_id>')
+class TodoSimple(Resource):
+    def get(self, todo_id):
+        return {
+            'todo_id': todo_id,
+            'data': todos[todo_id]
+        }
+
+    def put(self, todo_id):
+        todos[todo_id] = request.json.get('data')
+        return {
+            'todo_id': todo_id,
+            'data': todos[todo_id]
+        }
+    
+    def delete(self, todo_id):
+        del todos[todo_id]
+        return {
+            "delete" : "success"
+        }
+
+if __name__ == "__main__":
+    app.run(debug=True, host='0.0.0.0', port=80)
